@@ -57,6 +57,9 @@ importers:
       globals:
         specifier: ^16.4.0
         version: 16.4.0
+      prettier:
+        specifier: ^3.6.2
+        version: 3.6.2
       prettier-eslint:
         specifier: ^16.4.2
         version: 16.4.2(typescript@5.9.2)
