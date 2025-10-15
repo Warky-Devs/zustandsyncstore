@@ -1,6 +1,6 @@
-import React, { type ReactNode } from 'react';
-import { type StateCreator, type StoreApi } from 'zustand';
-import { type PersistOptions } from 'zustand/middleware';
+import React, { type ReactNode } from "react";
+import { type StateCreator, type StoreApi } from "zustand";
+import { type PersistOptions } from "zustand/middleware";
 export type SyncStoreReturn<TState, TProps> = {
     Provider: (props: {
         children: ReactNode;
@@ -23,5 +23,5 @@ type LocalUseStore<TState, TProps> = {
 export declare function createSyncStore<TState, TProps>(createState?: StateCreator<TState>, useValue?: (props: {
     useStore: CreateContextUseStore<LocalUseStore<TState, TProps>>;
     useStoreApi: StoreApi<LocalUseStore<TState, TProps>>;
-} & TProps) => any): SyncStoreReturn<TState, TProps>;
+} & TProps) => unknown): SyncStoreReturn<TState, TProps>;
 export default createSyncStore;
