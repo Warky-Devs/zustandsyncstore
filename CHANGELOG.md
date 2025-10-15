@@ -1,5 +1,11 @@
 # @warkypublic/zustandsyncstore
 
+## 0.0.4
+
+### Patch Changes
+
+- f02816d: Redo: Fixed issues with React Elements causing the store to update props many times
+
 ## 0.0.3
 
 ### Patch Changes
