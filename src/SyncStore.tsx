@@ -1,10 +1,21 @@
-
-import {decycle} from '@warkypublic/artemis-kit/object'
-import React, { createContext, type ReactNode, useContext, useLayoutEffect, useRef } from 'react';
-import { createStore as createZustandStore, type StateCreator, type StoreApi } from 'zustand';
-import { persist, type PersistOptions } from 'zustand/middleware';
-import { useShallow } from 'zustand/react/shallow';
-import { useStoreWithEqualityFn } from 'zustand/traditional';
+/* eslint-disable react-hooks/rules-of-hooks */
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import React, {
+  createContext,
+  type ReactNode,
+  useContext,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
+import {
+  createStore as createZustandStore,
+  type StateCreator,
+  type StoreApi,
+} from "zustand";
+import { persist, type PersistOptions } from "zustand/middleware";
+import { useShallow } from "zustand/react/shallow";
+import { useStoreWithEqualityFn } from "zustand/traditional";
 
 export type SyncStoreReturn<TState, TProps> = {
   Provider: (
@@ -40,9 +51,11 @@ export function createSyncStore<TState, TProps>(
       useStore: CreateContextUseStore<LocalUseStore<TState, TProps>>;
       useStoreApi: StoreApi<LocalUseStore<TState, TProps>>;
     } & TProps
-  ) => any
+  ) => unknown
 ): SyncStoreReturn<TState, TProps> {
-  const StoreContext = createContext<null | StoreApi<LocalUseStore<TState, TProps>>>(null);
+  const StoreContext = createContext<null | StoreApi<
+    LocalUseStore<TState, TProps>
+  >>(null);
 
   function useStore(): LocalUseStore<TState, TProps>;
   function useStore<U>(
@@ -55,7 +68,7 @@ export function createSyncStore<TState, TProps>(
   ) {
     const store = useContext(StoreContext);
     if (!store) {
-      throw new Error('Missing StoreProvider');
+      throw new Error("Missing StoreProvider");
     }
     return useStoreWithEqualityFn(
       store,
@@ -73,39 +86,58 @@ export function createSyncStore<TState, TProps>(
     const syncedProps = useRef(false);
 
     const { $sync } = useStore((state) => ({ $sync: state.$sync }));
-    const storeApi = useContext<null | StoreApi<LocalUseStore<TState, TProps>>>(StoreContext);
+    const storeApi = useContext<null | StoreApi<LocalUseStore<TState, TProps>>>(
+      StoreContext
+    );
 
     if (firstSyncProps) {
       for (const key of firstSyncProps) {
         if (syncedProps.current) {
-          //@ts-ignore
-          delete others[key];
+          delete (others as Record<string, unknown>)[key];
         }
       }
     }
 
-    useLayoutEffect(
-      () => {
-        //@ts-ignore
-        $sync?.(others);
-        //method was actually called
-        if ($sync) {
-          syncedProps.current = true;
+    const depsArray = useMemo(() => {
+      const values = [];
+      for (const [value] of Object.entries(others ?? {})) {
+        if (React.isValidElement(value)) {
+          // Track React elements by type and key for change detection
+          let typeName = "unknown";
+          if (typeof value.type === "function" && "name" in value.type) {
+            typeName = (value.type as { name?: string }).name || "unknown";
+          } else if (typeof value.type === "string") {
+            typeName = value.type;
+          }
+          values.push(`${typeName}-${value.key || "no-key"}`);
+        } else {
+          values.push(value);
         }
-      },
-      [JSON.stringify(decycle(others ?? {}))]
-    );
+      }
+      return values;
+    }, [others]);
+
+    useLayoutEffect(() => {
+      $sync?.(others as TProps);
+      //method was actually called
+      if ($sync) {
+        syncedProps.current = true;
+      }
+    }, [depsArray]);
 
     if (useValue) {
       // @ts-ignore
       const returned = useValue({
         ...others,
         useStore,
-        useStoreApi: storeApi
+        useStoreApi: storeApi,
       });
 
+      //@ts-ignore Use value will not be conditional, its on definition side
       useLayoutEffect(() => {
-        if (returned && typeof returned === 'object') {$sync?.(returned);}
+        if (returned && typeof returned === "object") {
+          $sync?.(returned as TProps);
+        }
       }, [returned]);
     }
 
@@ -136,7 +168,8 @@ export function createSyncStore<TState, TProps>(
             (set, get, api) => ({
               //@ts-ignore
               ...createState?.(set, get, api),
-              $sync: (props: TProps) => set((state) => ({ ...state, ...props }))
+              $sync: (props: TProps) =>
+                set((state) => ({ ...state, ...props })),
             }),
             { ...props?.persist }
           )
@@ -146,7 +179,7 @@ export function createSyncStore<TState, TProps>(
           // @ts-ignore
           (set, get, api) => ({
             ...createState?.(set, get, api),
-            $sync: (props: TProps) => set((state) => ({ ...state, ...props }))
+            $sync: (props: TProps) => set((state) => ({ ...state, ...props })),
           })
         );
       }
@@ -163,7 +196,7 @@ export function createSyncStore<TState, TProps>(
 
   return {
     Provider: StoreProvider,
-    useStore
+    useStore,
   };
 }
 
