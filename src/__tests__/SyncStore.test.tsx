@@ -723,3 +723,61 @@ describe("Custom equality function", () => {
     expect(renderSpy.mock.calls.length).toBe(rendersAfterMount);
   });
 });
+
+// ─── 11. waitForSync ──────────────────────────────────────────────────────────
+
+describe("waitForSync", () => {
+  it("withholds children until first sync completes", () => {
+    const { Provider, useStore } = createCounterStore();
+
+    const Display = () => {
+      const label = useStore((s) => s.label);
+      return <div data-testid="label">{label}</div>;
+    };
+
+    render(
+      <Provider initialCount={0} label="ready" waitForSync>
+        <Display />
+      </Provider>
+    );
+
+    expect(screen.getByTestId("label")).toHaveTextContent("ready");
+  });
+
+  it("renders fallback while waiting for sync", () => {
+    type AsyncState = { data: string };
+    type AsyncProps = { data: string };
+
+    const { Provider, useStore } = createSyncStore<AsyncState, AsyncProps>();
+
+    const Display = () => {
+      const data = useStore((s) => s.data);
+      return <div data-testid="data">{data}</div>;
+    };
+
+    render(
+      <Provider data="loaded" waitForSync fallback={<div data-testid="loading">Loading...</div>}>
+        <Display />
+      </Provider>
+    );
+
+    expect(screen.getByTestId("data")).toHaveTextContent("loaded");
+  });
+
+  it("renders children immediately without waitForSync", () => {
+    const { Provider, useStore } = createCounterStore();
+
+    const Display = () => {
+      const label = useStore((s) => s.label);
+      return <div data-testid="label">{label}</div>;
+    };
+
+    render(
+      <Provider initialCount={0} label="immediate">
+        <Display />
+      </Provider>
+    );
+
+    expect(screen.getByTestId("label")).toHaveTextContent("immediate");
+  });
+});

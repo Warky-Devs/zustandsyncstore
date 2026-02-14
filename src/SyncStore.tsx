@@ -5,6 +5,7 @@ import React, {
   useContext,
   useLayoutEffect,
   useRef,
+  useState,
 } from "react";
 import {
   createStore as createZustandStore,
@@ -35,6 +36,8 @@ export type SyncStoreReturn<TState, TProps> = {
     } & {
       firstSyncProps?: string[];
       persist?: PersistOptions<Partial<TProps & TState>>;
+      waitForSync?: boolean;
+      fallback?: ReactNode;
     } & TProps
   ) => React.ReactNode;
   useStore: {
@@ -149,9 +152,11 @@ export function createSyncStore<TState, TProps>(
 
   const Hook = ({
     firstSyncProps,
+    onFirstSync,
     ...others
   }: {
     firstSyncProps: string[];
+    onFirstSync?: () => void;
   } & TProps) => {
     const syncedProps = useRef(false);
     const prevPropsRef = useRef<Record<string, unknown> | null>(null);
@@ -177,7 +182,10 @@ export function createSyncStore<TState, TProps>(
       if (propsChanged) {
         prevPropsRef.current = propsToSync;
         $sync(propsToSync as TProps);
-        syncedProps.current = true;
+        if (!syncedProps.current) {
+          syncedProps.current = true;
+          onFirstSync?.();
+        }
       }
     });
 
@@ -195,9 +203,12 @@ export function createSyncStore<TState, TProps>(
     } & {
       firstSyncProps?: string[];
       persist?: PersistOptions<Partial<TProps & TState>>;
+      waitForSync?: boolean;
+      fallback?: ReactNode;
     } & TProps
   ) => {
     const storeRef = useRef<StoreApi<InternalStoreState<TState, TProps>>>(null);
+    const [synced, setSynced] = useState(false);
 
     // #2: Destructure known keys directly instead of Object.fromEntries per render
     const {
@@ -206,6 +217,10 @@ export function createSyncStore<TState, TProps>(
       persist: persistOptions,
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       firstSyncProps,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      waitForSync,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      fallback,
       ...syncProps
     } = props;
 
@@ -235,8 +250,8 @@ export function createSyncStore<TState, TProps>(
     return (
       <StoreContext.Provider value={storeRef.current}>
         {/* @ts-ignore*/}
-        <Hook {...(syncProps as TProps)} firstSyncProps={props.firstSyncProps} />
-        {children}
+        <Hook {...(syncProps as TProps)} firstSyncProps={props.firstSyncProps} onFirstSync={() => setSynced(true)} />
+        {(!props.waitForSync || synced) ? children : (props.fallback ?? null)}
       </StoreContext.Provider>
     );
   };
