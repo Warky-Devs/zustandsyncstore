@@ -17,7 +17,8 @@
     "dist/**",
     "assets/**",
     "public/**",
-    "global.d.ts"
+    "global.d.ts",
+    "llms.txt"
   ],
   "module": "./src.lib.ts",
   "types": "./src/lib.ts",

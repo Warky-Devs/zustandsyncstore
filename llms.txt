@@ -1,0 +1,111 @@
+# ZustandSyncStore
+
+> @warkypublic/zustandsyncstore — React library that syncs component props into a scoped Zustand store.
+
+## Install
+
+```sh
+npm install @warkypublic/zustandsyncstore
+```
+
+Peer deps: react >= 19, zustand >= 5, use-sync-external-store >= 1.4
+
+## API
+
+```ts
+import { createSyncStore } from '@warkypublic/zustandsyncstore';
+
+createSyncStore<TState, TProps>(
+  createState?: StateCreator<TState>,
+  useValue?: (props: { useStore, useStoreApi } & TProps) => unknown
+): { Provider, useStore }
+```
+
+### Generics
+
+- TState: store-managed state (actions, computed fields, internal state)
+- TProps: props passed to Provider that auto-sync into the store
+
+### Returns
+
+- Provider: React context provider component
+- useStore(): returns TState & TProps
+- useStore(selector): returns selector result with shallow equality
+- useStore(selector, equalityFn): custom equality comparison
+
+### Provider Props
+
+- children: ReactNode (required)
+- ...TProps: all TProps fields (required, auto-synced on every change)
+- firstSyncProps: string[] (optional, prop names synced only on first render)
+- persist: PersistOptions (optional, zustand persist middleware config)
+
+## Rules
+
+1. Always define both TState and TProps generics
+2. useStore must be called inside Provider — throws "Missing StoreProvider" otherwise
+3. Props on Provider auto-sync into store state on every change
+4. Use selectors to prevent unnecessary re-renders
+5. firstSyncProps lists prop names that sync once then stop
+6. useValue runs as a React hook — can call hooks, returned object merges into store
+7. persist uses zustand/middleware — pass { name: "key" } minimum, localStorage default
+8. $sync is internal — never access it, hidden from consumer types
+9. Always spread state in set: set(s => ({ ...s, field: value }))
+10. Don't conditionally render Provider — store is created once on mount
+
+## Usage: Basic Store
+
+```tsx
+type State = { count: number; increment: () => void };
+type Props = { label: string };
+
+const { Provider, useStore } = createSyncStore<State, Props>((set) => ({
+  count: 0,
+  increment: () => set((s) => ({ ...s, count: s.count + 1 })),
+}));
+
+// Consumer — TProps and TState fields both accessible
+const label = useStore((s) => s.label);
+const count = useStore((s) => s.count);
+
+// Provider
+<Provider label="clicks"><Counter /></Provider>
+```
+
+## Usage: Derived Values (useValue)
+
+```tsx
+const { Provider, useStore } = createSyncStore<{ doubled: number }, { base: number }>(
+  undefined,
+  ({ base }) => ({ doubled: base * 2 })
+);
+```
+
+## Usage: Persistence
+
+```tsx
+<Provider label="saved" persist={{ name: "my-store" }}>
+  <App />
+</Provider>
+```
+
+## Usage: First-Sync-Only Props
+
+```tsx
+<Provider initialCount={10} label={dynamicLabel} firstSyncProps={["initialCount"]}>
+  {/* initialCount syncs once; label syncs on every change */}
+</Provider>
+```
+
+## Usage: Custom Equality
+
+```tsx
+const value = useStore((s) => s.heavyObject, (a, b) => a.id === b.id);
+```
+
+## Common Mistakes
+
+- Using useStore() without selector causes re-render on any state change
+- Forgetting spread in set: use set(s => ({ ...s, count: 1 })) not set({ count: 1 })
+- React element props work — shallow compare uses type+key, not reference
+- Don't conditionally render Provider — store ref is created on first mount only
