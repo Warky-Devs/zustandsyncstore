@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@warkypublic/zustandsyncstore": "0.0.4"
+  },
+  "changesets": [
+    "every-bats-stick"
+  ]
+}
