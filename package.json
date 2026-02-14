@@ -1,7 +1,7 @@
 {
   "name": "@warkypublic/zustandsyncstore",
   "author": "Warky Devs",
-  "version": "0.0.5-beta.0",
+  "version": "0.0.5-beta.1",
   "type": "module",
   "scripts": {
     "dev": "vite",

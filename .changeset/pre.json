@@ -5,6 +5,7 @@
     "@warkypublic/zustandsyncstore": "0.0.4"
   },
   "changesets": [
+    "cool-cows-stop",
     "every-bats-stick"
   ]
 }
