@@ -1,5 +1,11 @@
 # @warkypublic/zustandsyncstore
 
+## 0.0.5-beta.0
+
+### Patch Changes
+
+- 2ad752b: Refactor store for more speed
+
 ## 0.0.4
 
 ### Patch Changes
